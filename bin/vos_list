@@ -1,0 +1,6 @@
+#!/bin/bash
+
+for container in $* ; do    
+    time_it list-vos vls ${VOS_DEST}/${container}
+done
+

@@ -1,0 +1,5 @@
+#!/bin/bash
+
+for container in $* ; do
+    time_it list-ssh ssh ${SSH_SITE} ls ${SSH_DEST}/${container}
+done

@@ -1,0 +1,20 @@
+#!/bin/bash
+
+container=$1
+shift
+
+for n in $* ; do
+    size=$(du -b ${n} | awk '{print $1}')
+    if [[ ! -e ${n}.md5} ]] ; then
+	find ${n} | xargs -n1 md5sum  2> /dev/null > ${n}.md5
+    fi
+    time_it upload-${size}-vos vcp ${n} ${VOS_DEST}/${container}/${n}
+    if [[ -s ${n}.md5 ]]; then
+	md5_local=$(grep ${n} ${n}.md5 | awk '{print $1}')	
+	md5_remote=$(curl -s -E ${HOME}/.ssl/cadcproxy.pem -L \
+	    https://www.canfar.phys.uvic.ca/vospace/nodes/${VOS_DEST#vos:}/${container}/${n} | sed -n -e '/MD5/s|.*>\(.*\)<.*|\1|p')
+	if [[ ${md5_local} != ${md5_remote} ]] && [[ ${size} != 0 ]]; then
+	    echo $(( $(cat upload-vos.failed 2> /dev/null) + 1 )) > upload-vos.failed
+	fi
+    fi
+done

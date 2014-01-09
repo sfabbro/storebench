@@ -1,0 +1,69 @@
+#!/bin/bash
+
+source ${HOME}/openrc.sh
+
+usage() {
+    echo $"Usage: $(basename $0) CMD TAG...
+Runs storage benchmarks for a command CMD and TAG the results
+"
+}
+
+# benchmark_storage_file CMD CONTAINER FILE...
+# run benchmarks for CMD on FILE, interacts with remote CONTAINER
+benchmark_storage_file() {
+    local cmd=$1 container=$2
+    shift 2
+    local filelist="$*"
+    echo ">> Uploading files to container ${container}"
+    ${cmd}_upload ${container} ${filelist}
+    echo ">> Listing container ${container}"
+    ${cmd}_list ${container} > /dev/null
+    echo ">> Downloading files from ${container}"
+    ${cmd}_download ${container} ${filelist}
+    echo ">> Deleting files from ${container}"
+    ${cmd}_delete ${container} ${filelist}
+}
+
+# benchmark_run CMD CONTAINER
+# run benchmarks for CMD on all local files, interacts with remote CONTAINER
+benchmark_run() {
+    local cmd=$1 container=$2 niter=${3:-100}
+    local size iter
+    echo ">> Creating container ${container}"
+    ${cmd}_create ${container}
+    for size in {0..10} 32 64 128 256 512 {1..10}k {100..1000..100}k 8M 64M 128M 512M
+    do
+	for iter in $(seq -w ${niter}); do
+	    file=${container}-${size}-${iter}.rnd
+	    echo ">> Creating ${file} of size ${size}"
+	    create_random_file ${size} ${file}
+	    du -b -s ${file} >> filelist.size
+	    benchmark_storage_file ${cmd} ${container} ${file}
+	    rm ${file}{,.md5}
+	done
+    done
+    echo ">> Saving results ${container}"
+    mkdir ${container} && mv *.dat *.failed *.err filelist.size ${container}/
+    mv *.failed ${container} 2> /dev/null
+    tar cfz ${container}.tar.gz ${container}
+    swift upload -q results ${container}.tar.gz
+    echo ">> Deleting container ${container}"
+    ${cmd}_delete ${container}
+    rm -rf ${container}
+}
+
+[[ $# -lt 2 ]] && usage && exit 1
+[[ $(( (( $# / 2 )) * 2 )) !=  $# ]] && \
+    echo >&2 "$(basename $0): needs multiple of 2 arguments"  && exit 1
+
+# log the starting connection in case we are running in a VM that lost network
+nmap -sP www.google.com
+
+workdir=storebench.work
+mkdir -p ${workdir}
+pushd ${workdir} > /dev/null
+while [[ $# != 0 ]]; do
+    benchmark_run $1 $2
+    shift 2
+done
+popd > /dev/null

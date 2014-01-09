@@ -1,0 +1,19 @@
+#!/bin/bash
+
+container=$1
+shift
+
+for n in $* ; do
+    size=$(du -b ${n} | awk '{print $1}')
+    if [[ ! -e ${n}.md5} ]] ; then
+	find ${n} | xargs -n1 md5sum  2> /dev/null > ${n}.md5
+    fi
+    time_it upload-${size}-oss swift upload -q ${container} ${n}
+    if [[ -s ${n}.md5 ]]; then
+	md5_local=$(grep ${n} ${n}.md5 | awk '{print $1}')
+	md5_remote=$(swift stat ${container} ${n} | awk '/ETag/ {print $2}')
+	if [[ ${md5_local} != ${md5_remote} ]]; then
+	    echo $(( $(cat upload-oss.failed 2> /dev/null) + 1 )) > upload-oss.failed
+	fi
+    fi
+done

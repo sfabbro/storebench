@@ -1,0 +1,11 @@
+#!/bin/bash
+
+for container in $*; do
+    ssh ${SSH_SITE} rm -rf ${SSH_DEST}/${container}
+    time_it create-ssh ssh ${SSH_SITE} mkdir -p ${SSH_DEST}/${container}
+    if ! ssh ${SSH_SITE} test -d ${SSH_DEST}/${container} ; then
+	echo $(( $(cat create-ssh.failed 2> /dev/null) + 1 )) > create-ssh.failed
+    fi
+done
+
+

@@ -1,0 +1,20 @@
+#!/bin/bash
+
+container=$1
+
+if [[ $# == 1 ]]; then
+    vrmdir ${VOS_DEST}/${container}
+else
+    shift
+    for n in $* ; do
+	if [[ -e ${n} ]]; then
+	    size=$(du -b ${n} | awk '{print $1}')
+	else
+	    size=$(vls -l ${VOS_DEST}/${container}/${n} | awk '{print $5}')
+	fi
+	time_it delete-${size}-vos vrm ${VOS_DEST}/${container}/${n}
+	if vls ${VOS_DEST}/${container}/${n} 2> /dev/null ; then
+	    echo $(( $(cat delete-vos.failed 2> /dev/null) + 1 )) > delete-vos.failed
+	fi
+    done
+fi

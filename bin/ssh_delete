@@ -1,0 +1,21 @@
+#!/bin/bash
+
+container=$1
+
+if [[ $# == 1 ]]; then
+    ssh ${SSH_SITE} rm -rf ${SSH_DEST}/${container}
+else
+    shift
+    for n in $* ; do
+	if [[ -e ${n} ]]; then
+	    size=$(du -b ${n} | awk '{print $1}')
+	else
+	    size=$(ssh ${SSH_SITE} du -b ${SSH_DEST}/${container}/${n} | awk '{print $1}')
+	fi
+	time_it delete-${n%.*}-ssh \
+	    ssh ${SSH_SITE} rm -rf ${SSH_DEST}/${container}/${n}
+	if ssh ${SSH_SITE} test -e ${SSH_DEST}/${container}/${n} ; then
+	    echo $(( $(cat delete-ssh.failed 2> /dev/null) + 1 )) > delete-ssh.failed
+	fi
+    done
+fi

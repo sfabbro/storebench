@@ -1,0 +1,25 @@
+#!/bin/bash
+
+container=$1
+shift
+
+for n in $* ; do
+    if [[ -e ${n} ]]; then
+	size=$(du -b ${n} | awk '{print $1}')
+    else
+	size=$(ssh ${SSH_SITE} du -b ${SSH_DEST}/${container}/${n} | awk '{print $1}')
+    fi
+    if [[ ! -e ${n}.md5} ]] ; then
+	find ${n} | xargs -n1 md5sum 2> /dev/null > ${n}.md5
+    fi
+    [[ -e ${n} ]] && mv ${n}{,.old}
+    time_it download-${size}-ssh \
+	rsync -a ${SSH_SITE}:${SSH_DEST}/${container}/${n} ${n}
+    if [[ -s ${olddir}/${n}.md5 ]]; then
+	failed=$(md5sum -c ${olddir}/${n}.md5 | grep -c FAILED)
+	if [[ ${failed} != 0 ]]; then
+	    echo $(( $(cat download-ssh.failed 2> /dev/null) + ${failed} )) > download-ssh.failed
+	fi
+    fi
+    [[ -e ${n}.old ]] && rm ${n}.old
+done

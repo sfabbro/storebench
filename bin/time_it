@@ -1,0 +1,45 @@
+#!/bin/bash
+
+DESCRIPTIONS=(
+    "Elapsed (wall clock) time (seconds)"
+    "User time (seconds)"
+    "System time (seconds)"
+    "Percent of CPU this job got"
+    "Maximum resident set size (kbytes)"
+    "Minor (reclaiming a frame) page faults"
+    "Voluntary context switches"
+    "Involuntary context switches"
+    "File system inputs"
+    "File system outputs"
+    "Exit status"
+)
+
+# will translate an output of time -v to a one line to be accumulated
+translate_time_file() {
+    local timefile=$1
+    # convert elapsed time in seconds
+    grep "Elapsed" ${timefile} | \
+	sed -e 's/^[[:space:]]*//' | awk '{printf "%s ",$NF}' | \
+	awk -F : '{printf "%6.2f ", 60*$1+$2}'
+
+    # print other fields
+    local desc
+    for desc in "${DESCRIPTIONS[@]}" ; do
+	grep "${desc}" ${timefile} | \
+	    sed -e 's/^[[:space:]]*//' | awk '{printf "%s ",$NF}' | \
+	    sed -e 's/%//'
+    done
+    echo
+}
+
+# time_it LOGNAME COMMAND ARG...
+# do detailed timing of a command to LOGNAME
+log=$1
+shift
+errfile=${log}-$$.err
+date > ${errfile}
+echo "command: '$*'" >> ${errfile}
+/usr/bin/time -v -o ${log}.time $* 2> >(tee -a ${errfile} >&2)
+[[ $(awk '/Exit/ {print $3}' ${log}.time) == 0 ]] && rm ${errfile}
+translate_time_file ${log}.time >> ${log}.dat
+rm ${log}.time

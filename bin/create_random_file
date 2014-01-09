@@ -1,0 +1,21 @@
+#!/bin/bash
+
+size=$1
+filename=$2
+
+if [[ ${size} =~ k ]]; then
+    bs=1k
+    count=${size%k}
+elif [[ ${size} =~ M ]]; then
+    bs=64k
+    count=$(( 16 * ${size%M} ))
+elif [[ ${size} =~ G ]]; then
+    bs=64M
+    count=$(( 16 * ${size%G} ))
+else
+    bs=1
+    count=${size}
+fi
+
+dd if=/dev/urandom of=${filename} bs=${bs} count=${count} 2> /dev/null
+md5sum ${filename} 2> /dev/null > ${filename}.md5

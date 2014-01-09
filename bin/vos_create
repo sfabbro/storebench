@@ -1,0 +1,11 @@
+#!/bin/bash
+
+for container in $*; do
+    vrmdir ${VOS_DEST}/${container} 2> /dev/null
+    time_it create-vos vmkdir ${VOS_DEST}/${container}
+    if ! vls ${VOS_DEST}/${container} ; then
+	echo $(( $(cat create-vos.failed 2> /dev/null) + 1 )) > create-vos.failed
+    fi
+done
+
+
