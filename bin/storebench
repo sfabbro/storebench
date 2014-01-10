@@ -59,7 +59,7 @@ benchmark_run() {
 # log the starting connection in case we are running in a VM that lost network
 nmap -sP www.google.com
 
-workdir=storebench.work
+workdir=storebench.$$
 mkdir -p ${workdir}
 pushd ${workdir} > /dev/null
 while [[ $# != 0 ]]; do
