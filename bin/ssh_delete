@@ -8,9 +8,9 @@ else
     shift
     for n in $* ; do
 	if [[ -e ${n} ]]; then
-	    size=$(du -b ${n} | awk '{print $1}')
+	    size=$(du -b ${n} | awk '{printf "%012d",$1}')
 	else
-	    size=$(ssh ${SSH_SITE} du -b ${SSH_DEST}/${container}/${n} | awk '{print $1}')
+	    size=$(ssh ${SSH_SITE} du -b ${SSH_DEST}/${container}/${n} | awk '{printd "%012d",$1}')
 	fi
 	time_it delete-${n%.*}-ssh \
 	    ssh ${SSH_SITE} rm -rf ${SSH_DEST}/${container}/${n}

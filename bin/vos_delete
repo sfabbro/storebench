@@ -8,9 +8,9 @@ else
     shift
     for n in $* ; do
 	if [[ -e ${n} ]]; then
-	    size=$(du -b ${n} | awk '{print $1}')
+	    size=$(du -b ${n} | awk '{printf "012d",$1}')
 	else
-	    size=$(vls -l ${VOS_DEST}/${container}/${n} | awk '{print $5}')
+	    size=$(vls -l ${VOS_DEST}/${container}/${n} | awk '{printf "%012d",$5}')
 	fi
 	time_it delete-${size}-vos vrm ${VOS_DEST}/${container}/${n}
 	if vls ${VOS_DEST}/${container}/${n} 2> /dev/null ; then
