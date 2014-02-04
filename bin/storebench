@@ -31,7 +31,8 @@ benchmark_run() {
     local size iter
     echo ">> Creating container ${container}"
     ${cmd}_create ${container}
-    for size in {0..10} 32 64 128 256 512 {1..10}k {100..1000..100}k 8M 64M 128M 512M
+    #for size in {0..10} 32 64 128 256 512 {1..10}k {100..1000..100}k 8M 64M 128M 512M
+    for size in 0 {1..10}k
     do
 	for iter in $(seq -w ${niter}); do
 	    file=${container}-${size}-${iter}.rnd
