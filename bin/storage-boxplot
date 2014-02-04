@@ -1,0 +1,29 @@
+#!/usr/bin/env python
+
+import numpy as np
+import matplotlib.pyplot as plt
+import sys
+import os
+import glob
+
+def storage_plot(resdir):
+    os.chdir(resdir)
+    rescreate = glob.glob('create-*.dat')[0]
+    storage = rescreate[7:len(rescreate)-4]
+    for fcn in ('upload','download','delete'):
+        d = np.zeros((11,1000))        
+        for s in range(11):
+            a = np.loadtxt(fcn+'-'+str(s)+'-'+storage+'.dat')
+            d[s,:] = a[:,0]
+        plt.plot(np.zeros(11), np.zeros(11), hold=True)
+        plt.xlim = (0, 11)
+        plt.ylim = (0, np.max(d[:,:])+0.5)
+        plt.xlabel('file size (kB)')
+        plt.ylabel('transaction time (s)')
+        plt.title(fcn+' time for storage '+storage)
+        plt.boxplot(d, positions=range(11))
+        plt.savefig(fcn+'-'+storage+'.png')
+        plt.clf()
+
+if __name__=='__main__':
+    storage_plot(sys.argv[1])
